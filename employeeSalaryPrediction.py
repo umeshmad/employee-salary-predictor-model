@@ -129,7 +129,85 @@ results[name]={
 }
 print(f"  RMSE: ${rmse:,.2f}")
 print(f"  MAE: ${mae:,.2f}")
-print(f"  R² Score: {r2:.4f}")
+print(f"  R2 Score: {r2:.4f}")
+
+comparison_df=pd.DataFrame({
+    'model':list(results.keys()),
+    'RMSE':[results[m]['rmse'] for m in results.keys()],
+    'MAE':[results[c]['mae'] for c in results.keys()],
+    'R2':[results[d]['r2']for d in results.keys()]
+}   
+)
+print(comparison_df.to_string(index=False))
+best_model_name=min(results.key(lambda x:results[x]['rmse']))
+print(f"the best model name is {best_model_name}")
+
+print("\nGenerating prediction visualizations...")
+
+fig,axes=plt.subplots(1,3,figsize=(18,5))
+fig.suptitle('Model Predictions vs Actual Salary',fontsize=16,fontweight='bold')
+
+for index,(name,result) in enumerate(results.items()):
+    axes[index].scatter(y_test,results['predictions'],alpha=0.5,color='blue')
+    axes[index].plot([y_test.min(),y_test.max()],
+                     [y_test.min(),y_test.max()],
+                     'r--',lw=2, label='Perfect prediction')
+    axes[index].set_xlabel('Actual Salary ($)')
+    axes[index].set_ylabel('Predicted Salary ($)')
+    axes[index].set_title(f'{name}\nR² = {result["R2"]:.4f}')
+    axes[index].legend()
+    axes[index].grid(True,alpha=0.3)
+plt.tight_layout()
+plt.show()
+
+print("\n" + "=" * 50)
+print("FEATURE IMPORTANCE (Random Forest)")
+print("=" * 50)
+
+rf_model=results['random']['model']
+feature_importance=pd.DataFrame({
+    'feature':X.columns,
+    'Importance':rf_model.feature_importance_
+}).sort_values('Importance',ascending=False)
+print(feature_importance.to_string(index=False))
+
+plt.figure(figsize=(10,6))
+plt.barh(feature_importance['feature'],feature_importance['Importance'],color='teal')
+plt.x_label('Importance')
+plt.y_label('Features')
+plt.title('Feature Importance in Salary Prediction (Random Forest)')
+plt.gca().invert_yaxis()
+plt.tight_layout()
+plt.show()
+
+sample_employees = pd.DataFrame({
+    'years_experience': [2, 7, 15],
+    'age': [25, 32, 45],
+    'education_level': [2, 3, 4],  
+    'job_level': [1, 3, 5],  
+    'projects_completed': [10, 35, 80],
+    'performance_rating': [3, 4, 5]
+})
+
+education_labels = {1: 'High School', 2: 'Bachelor', 3: 'Master', 4: 'PhD'}
+job_labels = {1: 'Junior', 2: 'Mid', 3: 'Senior', 4: 'Lead', 5: 'Manager'}
+
+print("Sample Employees:")
+for i in range(len(sample_employees)):
+    print(f"\nEmployee {i+1}:")
+    print(f"  Experience: {sample_employees.iloc[i]['years_experience']} years")
+    print(f"  Age: {sample_employees.iloc[i]['age']} years")
+    print(f"  Education: {education_labels[sample_employees.iloc[i]['education_level']]}")
+    print(f"  Job Level: {job_labels[sample_employees.iloc[i]['job_level']]}")
+    print(f"  Projects Completed: {sample_employees.iloc[i]['projects_completed']}")
+    print(f"  Performance Rating: {sample_employees.iloc[i]['performance_rating']}/5")
+
+best_model = results[best_model_name]['model']
+predictions = best_model.predict(sample_employees)
+
+print(f"\nPredicted Salaries (using {best_model_name}):")
+for i, salary in enumerate(predictions):
+    print(f"  Employee {i+1}: ${salary:,.2f}")
 
 
 
